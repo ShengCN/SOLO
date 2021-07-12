@@ -37,13 +37,15 @@ df = pd.read_csv(params.csv)
 for i, v in tqdm(df.iterrows(), total=len(df), desc="SOLO Segmentation"):
 	try:
 		img = join(root, df.at[i, 'rgb'])
-		result = inference_detector(model, img)
-		seg = result[0][0][:1].detach().cpu().numpy().transpose((1,2,0)).repeat(3, axis=2).astype(np.float)
-
 		bname = os.path.splitext(os.path.basename(img))[0]
 		ofname = join(params.outfolder, '{}_seg.png'.format(bname))
-		plt.imsave(ofname, seg)
+		if os.path.exists(ofname):
+			df.at[i,'segmentation'] = os.path.relpath(ofname, root)
+			continue
 
+		result = inference_detector(model, img)
+		seg = result[0][0][:1].detach().cpu().numpy().transpose((1,2,0)).repeat(3, axis=2).astype(np.float)
+		plt.imsave(ofname, seg)
 		df.at[i,'segmentation'] = os.path.relpath(ofname, root)
 	except:
 		logging.error("File {} has problem. Result: {}".format(img, result))
